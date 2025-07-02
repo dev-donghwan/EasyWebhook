@@ -1,160 +1,146 @@
 package com.donghwan.easywebhook.webhook.builder
 
-import com.donghwan.easywebhook.webhook.model.WebhookType
-import com.donghwan.easywebhook.webhook.model.common.CommonCustomNotification
-import com.donghwan.easywebhook.webhook.model.discord.DiscordRedirectNotification
-import com.donghwan.easywebhook.webhook.model.slack.SlackSimpleNotification
+import com.donghwan.easywebhook.webhook.WebhookType
+import com.donghwan.easywebhook.webhook.model.impls.CustomWebhookNotification
+import com.donghwan.easywebhook.webhook.model.impls.RedirectWebhookNotification
+import com.donghwan.easywebhook.webhook.model.impls.SimpleWebhookNotification
 import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 
 class WebhookMessageBuilderTest {
 
-    @Test
-    fun `type setting returns builder`() {
-        val builder = WebhookMessageBuilder()
-        val returned = builder.type(WebhookType.SLACK)
-        assertSame(builder, returned)
-    }
+    @Nested
+    inner class TypeAndUrlTests {
 
-    @Test
-    fun `url setting returns builder`() {
-        val builder = WebhookMessageBuilder()
-        val returned = builder.url("https://example.com")
-        assertSame(builder, returned)
-    }
-
-    @Test
-    fun `build throws if type not set`() {
-        val builder = WebhookMessageBuilder()
-        builder.url("https://example.com")
-
-        val ex = assertThrows<IllegalStateException> {
-            builder.simple {
-                title = "Title"
-                content = "Content"
-            }
+        @Test
+        fun `setting type returns builder instance`() {
+            val builder = WebhookMessageBuilder()
+            val result = builder.type(WebhookType.SLACK)
+            assertSame(builder, result)
         }
-        assertEquals("Type must be set before calling simple", ex.message)
-    }
 
-    @Test
-    fun `build throws if url not set`() {
-        val builder = WebhookMessageBuilder()
-        builder.type(WebhookType.SLACK)
-        builder.simple {
-            title = "Title"
-            content = "Content"
+        @Test
+        fun `setting url returns builder instance`() {
+            val builder = WebhookMessageBuilder()
+            val result = builder.url("https://example.com")
+            assertSame(builder, result)
         }
-        val ex = assertThrows<IllegalStateException> { builder.build() }
-        assertEquals("URL must be set", ex.message)
     }
 
-    @Test
-    fun `simple notification builds correctly`() {
-        val builder = WebhookMessageBuilder()
-        builder.type(WebhookType.SLACK)
-            .url("https://slack.url")
-            .simple {
-                title = "Hello"
-                content = "World"
-            }
-        val message = builder.build()
-        assertEquals(WebhookType.SLACK, message.type)
-        assertEquals("https://slack.url", message.url)
-        assertTrue(message.body is SlackSimpleNotification)
-        val body = message.body as SlackSimpleNotification
-        assertEquals("Hello", body.title)
-        assertEquals("World", body.content)
-    }
+    @Nested
+    inner class SimpleNotificationTests {
 
-    @Test
-    fun `simple throws if type not set`() {
-        val builder = WebhookMessageBuilder()
-        val ex = assertThrows<IllegalStateException> {
-            builder.simple {
-                title = "Hi"
-                content = "Test"
-            }
-        }
-        assertEquals("Type must be set before calling simple", ex.message)
-    }
-
-    @Test
-    fun `redirect notification builds correctly`() {
-        val builder = WebhookMessageBuilder()
-        builder.type(WebhookType.DISCORD)
-            .url("https://discord.url")
-            .redirect {
-                title = "Redirect"
-                content = "Click"
-                redirectUrl = "https://redirect.url"
-            }
-        val message = builder.build()
-        assertEquals(WebhookType.DISCORD, message.type)
-        assertEquals("https://discord.url", message.url)
-        assertTrue(message.body is DiscordRedirectNotification)
-        val body = message.body as DiscordRedirectNotification
-        assertEquals("Redirect", body.title)
-        assertEquals("Click", body.content)
-        assertEquals("https://redirect.url", body.redirectUrl)
-    }
-
-    @Test
-    fun `redirect throws if type not set`() {
-        val builder = WebhookMessageBuilder()
-        val ex = assertThrows<IllegalStateException> {
-            builder.redirect {
-                title = "Redirect"
-                content = "Click"
-                redirectUrl = "https://redirect.url"
-            }
-        }
-        assertEquals("Type must be set before calling redirect", ex.message)
-    }
-
-    @Test
-    fun `custom notification builds correctly`() {
-        val builder = WebhookMessageBuilder()
-        builder.type(WebhookType.SLACK)
-            .url("https://slack.url")
-            .custom {
-                field("foo", 123)
-                child("bar") {
-                    field("baz", "qux")
+        @Test
+        fun `build simple notification for slack`() {
+            val builder = WebhookMessageBuilder()
+                .type(WebhookType.SLACK)
+                .url("https://slack.example.com")
+                .simple {
+                    title = "Hello Slack"
+                    content = "Simple message content"
                 }
-            }
-        val message = builder.build()
-        assertEquals(WebhookType.SLACK, message.type)
-        assertEquals("https://slack.url", message.url)
-        assertTrue(message.body is CommonCustomNotification)
-        val body = message.body as CommonCustomNotification
-        assertEquals(123, body.data["foo"])
-        val nested = body.data["bar"] as? Map<*, *>
-        assertNotNull(nested)
-        assertEquals("qux", nested?.get("baz"))
+            val message = builder.build()
+
+            assertEquals(WebhookType.SLACK, message.type)
+            assertEquals("https://slack.example.com", message.url)
+            assertTrue(message.body is SimpleWebhookNotification)
+
+            val body = message.body as SimpleWebhookNotification
+            assertEquals("Hello Slack", body.title)
+            assertEquals("Simple message content", body.content)
+        }
     }
 
-    @Test
-    fun `custom throws if type not set`() {
-        val builder = WebhookMessageBuilder()
-        val ex = assertThrows<IllegalStateException> {
-            builder.custom {
-                field("foo", 1)
-            }
+    @Nested
+    inner class RedirectNotificationTests {
+
+        @Test
+        fun `build redirect notification for discord`() {
+            val builder = WebhookMessageBuilder()
+                .type(WebhookType.DISCORD)
+                .url("https://discord.example.com")
+                .redirect {
+                    title = "Redirect Title"
+                    content = "Redirect content"
+                    redirectUrl = "https://redirect.url"
+                }
+            val message = builder.build()
+
+            assertEquals(WebhookType.DISCORD, message.type)
+            assertEquals("https://discord.example.com", message.url)
+            assertTrue(message.body is RedirectWebhookNotification)
+
+            val body = message.body as RedirectWebhookNotification
+            assertEquals("Redirect Title", body.title)
+            assertEquals("Redirect content", body.content)
+            assertEquals("https://redirect.url", body.redirectUrl)
         }
-        assertEquals("Type must be set before calling custom", ex.message)
     }
 
-    @Test
-    fun `build throws if body not set`() {
-        val builder = WebhookMessageBuilder()
-        builder.type(WebhookType.SLACK)
-            .url("https://slack.url")
+    @Nested
+    inner class CustomNotificationTests {
 
-        val ex = assertThrows<IllegalStateException> {
-            builder.build()
+        @Test
+        fun `build custom notification for slack`() {
+            val builder = WebhookMessageBuilder()
+                .type(WebhookType.SLACK)
+                .url("https://slack.example.com")
+                .custom {
+                    field("customKey", "customValue")
+                    child("nested") {
+                        field("nestedKey", 123)
+                    }
+                }
+            val message = builder.build()
+
+            assertEquals(WebhookType.SLACK, message.type)
+            assertEquals("https://slack.example.com", message.url)
+            assertTrue(message.body is CustomWebhookNotification)
+
+            val body = message.body as CustomWebhookNotification
+            assertEquals("customValue", body.data["customKey"])
+            val nested = body.data["nested"] as? Map<*, *>
+            assertNotNull(nested)
+            assertEquals(123, nested?.get("nestedKey"))
         }
-        assertEquals("Body must be set", ex.message)
+    }
+
+    @Nested
+    inner class BuildValidationTests {
+
+        @Test
+        fun `build fails if type not set`() {
+            val builder = WebhookMessageBuilder()
+                .url("https://example.com")
+                .simple {
+                    title = "No Type"
+                    content = "Missing type"
+                }
+            val ex = assertThrows<IllegalStateException> { builder.build() }
+            assertEquals("Type must be set", ex.message)
+        }
+
+        @Test
+        fun `build fails if url not set`() {
+            val builder = WebhookMessageBuilder()
+                .type(WebhookType.SLACK)
+                .simple {
+                    title = "No URL"
+                    content = "Missing url"
+                }
+            val ex = assertThrows<IllegalStateException> { builder.build() }
+            assertEquals("URL must be set", ex.message)
+        }
+
+        @Test
+        fun `build fails if body not set`() {
+            val builder = WebhookMessageBuilder()
+                .type(WebhookType.SLACK)
+                .url("https://example.com")
+            val ex = assertThrows<IllegalStateException> { builder.build() }
+            assertEquals("Body must be set", ex.message)
+        }
     }
 }

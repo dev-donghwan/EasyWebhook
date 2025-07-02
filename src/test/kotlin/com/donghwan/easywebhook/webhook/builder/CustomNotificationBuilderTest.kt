@@ -3,11 +3,11 @@ package com.donghwan.easywebhook.webhook.builder
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
-class CustomDataBuilderTest {
+class CustomNotificationBuilderTest {
 
     @Test
     fun `field adds single key-value pair`() {
-        val builder = CustomDataBuilder()
+        val builder = CustomNotificationBuilder()
         builder.field("key1", "value1")
 
         val result = builder.build()
@@ -17,7 +17,7 @@ class CustomDataBuilderTest {
 
     @Test
     fun `child creates nested map correctly`() {
-        val builder = CustomDataBuilder()
+        val builder = CustomNotificationBuilder()
         builder.child("parent") {
             field("childKey", 123)
             field("anotherKey", true)
@@ -33,7 +33,7 @@ class CustomDataBuilderTest {
 
     @Test
     fun `multiple fields and child calls combined`() {
-        val builder = CustomDataBuilder()
+        val builder = CustomNotificationBuilder()
         builder.field("simpleKey", "simpleValue")
         builder.child("child1") {
             field("nestedKey1", 10)
@@ -58,14 +58,14 @@ class CustomDataBuilderTest {
 
     @Test
     fun `empty builder produces empty map`() {
-        val builder = CustomDataBuilder()
+        val builder = CustomNotificationBuilder()
         val result = builder.build()
         assertTrue(result.isEmpty())
     }
 
     @Test
     fun `child can be called multiple times for different keys`() {
-        val builder = CustomDataBuilder()
+        val builder = CustomNotificationBuilder()
         builder.child("first") {
             field("a", 1)
         }
@@ -80,7 +80,7 @@ class CustomDataBuilderTest {
 
     @Test
     fun `overwriting keys replaces previous value`() {
-        val builder = CustomDataBuilder()
+        val builder = CustomNotificationBuilder()
         builder.field("key", "firstValue")
         builder.field("key", "secondValue")
 
@@ -90,7 +90,7 @@ class CustomDataBuilderTest {
 
     @Test
     fun `complex nested structure with multiple levels`() {
-        val builder = CustomDataBuilder()
+        val builder = CustomNotificationBuilder()
         builder.field("level1Key", "value1")
         builder.child("level1Child") {
             field("level2Key", 42)

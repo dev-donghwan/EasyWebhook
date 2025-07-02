@@ -1,4 +1,6 @@
-package com.donghwan.easywebhook.webhook.model
+package com.donghwan.easywebhook.webhook
+
+import com.donghwan.easywebhook.webhook.model.WebhookNotification
 
 data class WebhookMessage(
     val type: WebhookType,
