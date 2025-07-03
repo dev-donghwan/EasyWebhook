@@ -2,6 +2,9 @@ import com.donghwan.easywebhook.webhook.WebhookMessage
 import com.donghwan.easywebhook.webhook.WebhookType
 import com.donghwan.easywebhook.webhook.client.OkHttpWebhookClient
 import com.donghwan.easywebhook.webhook.client.WebhookClientException
+import com.donghwan.easywebhook.webhook.converter.WebhookMessageConverter
+import com.donghwan.easywebhook.webhook.converter.WebhookMessageConverterManager
+import com.donghwan.easywebhook.webhook.model.WebhookNotification
 import com.donghwan.easywebhook.webhook.model.impls.SimpleWebhookNotification
 import com.google.gson.Gson
 import okhttp3.*
@@ -10,15 +13,17 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 
 class OkHttpWebhookClientTest {
 
     private lateinit var okHttpClient: OkHttpClient
     private lateinit var call: Call
+    private lateinit var converterManager: WebhookMessageConverterManager
+    private lateinit var mockConverter: WebhookMessageConverter<WebhookNotification>
     private lateinit var client: OkHttpWebhookClient
     private val gson = Gson()
 
@@ -26,7 +31,14 @@ class OkHttpWebhookClientTest {
     fun setup() {
         okHttpClient = mock()
         call = mock()
-        client = OkHttpWebhookClient(okHttpClient, gson)
+        converterManager = mock()
+        mockConverter = mock()
+
+        client = OkHttpWebhookClient(
+            converterManager = converterManager,
+            client = okHttpClient,
+            gson = gson
+        )
     }
 
     @Test
@@ -43,8 +55,12 @@ class OkHttpWebhookClientTest {
             .body(ResponseBody.create(null, ""))
             .build()
 
-        `when`(okHttpClient.newCall(any())).thenReturn(call)
-        `when`(call.execute()).thenReturn(response)
+        whenever(converterManager.findConverter(message.type, message.body)).thenReturn(mockConverter)
+        whenever(mockConverter.supports(message.type, message.body)).thenReturn(true)
+        whenever(mockConverter.convert(message.body)).thenReturn(notification)
+
+        whenever(okHttpClient.newCall(any())).thenReturn(call)
+        whenever(call.execute()).thenReturn(response)
 
         assertDoesNotThrow {
             client.sendMessage(message)
@@ -68,8 +84,12 @@ class OkHttpWebhookClientTest {
             .body(ResponseBody.create(null, ""))
             .build()
 
-        `when`(okHttpClient.newCall(any())).thenReturn(call)
-        `when`(call.execute()).thenReturn(response)
+        whenever(converterManager.findConverter(message.type, message.body)).thenReturn(mockConverter)
+        whenever(mockConverter.supports(message.type, message.body)).thenReturn(true)
+        whenever(mockConverter.convert(message.body)).thenReturn(notification)
+
+        whenever(okHttpClient.newCall(any())).thenReturn(call)
+        whenever(call.execute()).thenReturn(response)
 
         val exception = assertThrows<WebhookClientException> {
             client.sendMessage(message)
